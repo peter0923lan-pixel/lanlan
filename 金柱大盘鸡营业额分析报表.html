@@ -1,0 +1,768 @@
+
+    <!DOCTYPE html>
+    <html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>金柱大盘鸡营业额数据分析报表</title>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <style>
+            body {
+                font-family: 'Microsoft YaHei', 'Arial', sans-serif;
+                margin: 0;
+                padding: 0;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+            }
+            
+            .container {
+                max-width: 1400px;
+                margin: 0 auto;
+                padding: 20px;
+                background: white;
+                margin-top: 20px;
+                margin-bottom: 20px;
+                border-radius: 15px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            }
+            
+            .header {
+                text-align: center;
+                padding: 30px 0;
+                background: linear-gradient(135deg, #2c3e50, #34495e);
+                color: white;
+                border-radius: 15px;
+                margin-bottom: 30px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            }
+            
+            .header h1 {
+                margin: 0;
+                font-size: 2.5em;
+                font-weight: 300;
+                letter-spacing: 2px;
+            }
+            
+            .header p {
+                margin: 10px 0 0 0;
+                font-size: 1.2em;
+                opacity: 0.8;
+            }
+            
+            .chart-container {
+                margin: 30px 0;
+                padding: 20px;
+                background: #f8f9fa;
+                border-radius: 10px;
+                box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            }
+            
+            .chart-title {
+                font-size: 1.5em;
+                color: #2c3e50;
+                margin-bottom: 15px;
+                text-align: center;
+                font-weight: 500;
+            }
+            
+            .summary-stats {
+                display: grid;
+                grid-template-columns: repeat(6, 1fr);
+                gap: 25px;
+                margin: 40px 0;
+            }
+            
+            .stat-card {
+                color: white;
+                padding: 30px 20px;
+                border-radius: 15px;
+                text-align: center;
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+                transition: all 0.3s ease;
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .stat-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+                transition: left 0.5s;
+            }
+            
+            .stat-card:hover {
+                transform: translateY(-8px) scale(1.02);
+                box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+            }
+            
+            .stat-card:hover::before {
+                left: 100%;
+            }
+            
+            /* 第一行 - 基础指标 (深蓝色系) */
+            .stat-card:nth-child(1), .stat-card:nth-child(2), .stat-card:nth-child(3), 
+            .stat-card:nth-child(4), .stat-card:nth-child(5), .stat-card:nth-child(6) {
+                background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+            }
+            
+            /* 第二行 - 好友指标 (统一绿色系) */
+            .stat-card:nth-child(8), .stat-card:nth-child(9), .stat-card:nth-child(10), 
+            .stat-card:nth-child(11), .stat-card:nth-child(12), .stat-card:nth-child(13) {
+                background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            }
+            
+            /* 第三行 - 社群指标 (浅橙色调) */
+            .stat-card:nth-child(15), .stat-card:nth-child(16), .stat-card:nth-child(17), 
+            .stat-card:nth-child(18), .stat-card:nth-child(19), .stat-card:nth-child(20) {
+                background: linear-gradient(135deg, #ffb74d 0%, #ff9800 100%);
+            }
+            
+            .stat-value {
+                font-size: 2.2em;
+                font-weight: 700;
+                margin-bottom: 8px;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                letter-spacing: -0.5px;
+            }
+            
+            .stat-label {
+                font-size: 0.95em;
+                opacity: 0.95;
+                font-weight: 500;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            
+            .insights {
+                background: #e8f5e8;
+                border-left: 5px solid #27ae60;
+                padding: 20px;
+                margin: 30px 0;
+                border-radius: 5px;
+            }
+            
+            .insights h3 {
+                color: #27ae60;
+                margin-top: 0;
+            }
+            
+            .insights ul {
+                margin: 10px 0;
+                padding-left: 20px;
+            }
+            
+            .insights li {
+                margin: 8px 0;
+                line-height: 1.6;
+            }
+            
+            .footer {
+                text-align: center;
+                padding: 20px;
+                color: #7f8c8d;
+                border-top: 1px solid #ecf0f1;
+                margin-top: 40px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>金柱大盘鸡营业额数据分析报表</h1>
+                <p>数据分析期间: 2025年11月29日 - 2025年12月29日</p>
+                <p>报表生成时间: 2025年12月30日</p>
+            </div>
+            
+            <div class="section-title">
+                <h2 style="text-align: center; color: #2c3e50; margin: 40px 0 20px 0; font-size: 1.8em; font-weight: 600;">📊 核心业绩指标</h2>
+            </div>
+            
+            <div class="summary-stats">
+                <!-- 第一行：基础营业指标 -->
+                <div class="stat-card">
+                    <div class="stat-value">39.67万元</div>
+                    <div class="stat-label">总营业额</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2591</div>
+                    <div class="stat-label">总订单数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">¥153</div>
+                    <div class="stat-label">客单价</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">1.28万元</div>
+                    <div class="stat-label">日均营业额</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">33</div>
+                    <div class="stat-label">门店总数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">¥388</div>
+                    <div class="stat-label">单店日均营业额</div>
+                </div>
+                
+                <!-- 分隔线和标题 -->
+                <div style="grid-column: 1 / -1; text-align: center; margin: 20px 0 10px 0;">
+                    <h3 style="color: #56ab2f; font-size: 1.2em; font-weight: 600; margin: 0;">🤝 好友私域指标</h3>
+                </div>
+                
+                <!-- 第二行：好友相关指标 -->
+                <div class="stat-card">
+                    <div class="stat-value">4.91万元</div>
+                    <div class="stat-label">好友成交金额</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">12.4%</div>
+                    <div class="stat-label">好友成交占比</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">1.86万</div>
+                    <div class="stat-label">留存好友体量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">363</div>
+                    <div class="stat-label">好友成交订单数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2.0%</div>
+                    <div class="stat-label">私域好友转化率</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">708</div>
+                    <div class="stat-label">新增好友数</div>
+                </div>
+                
+                <!-- 分隔线和标题 -->
+                <div style="grid-column: 1 / -1; text-align: center; margin: 20px 0 10px 0;">
+                    <h3 style="color: #f5576c; font-size: 1.2em; font-weight: 600; margin: 0;">👥 社群私域指标</h3>
+                </div>
+                
+                <!-- 第三行：社群相关指标 -->
+                <div class="stat-card">
+                    <div class="stat-value">1.61万元</div>
+                    <div class="stat-label">社群成交金额</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">4.1%</div>
+                    <div class="stat-label">社群成交占比</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">1496</div>
+                    <div class="stat-label">留存群成员体量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">126</div>
+                    <div class="stat-label">群成员成交订单数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">8.4%</div>
+                    <div class="stat-label">私域群成员转化率</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">807</div>
+                    <div class="stat-label">新增群成员数</div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <div id="private-domain-chart"></div>
+            </div>
+            
+            <div class="chart-container">
+                <div id="revenue-trend"></div>
+            </div>
+            
+            <div class="chart-container">
+                <div id="weekly-pattern"></div>
+            </div>
+            
+            <div class="chart-container">
+                <div id="marketing-pie"></div>
+                <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                    <div style="flex: 0 0 45%; padding: 15px; text-align: center;">
+                        <p style="margin: 5px 0; font-size: 1.1em; color: #2c3e50; white-space: nowrap;">
+                            私域总成交金额 <span style="color: #8e44ad; font-weight: bold;">49440.33元</span> | 
+                            好友成交金额 <span style="color: #3498db; font-weight: bold;">49122.69元</span> | 
+                            社群成交金额 <span style="color: #e74c3c; font-weight: bold;">16063.86元</span>
+                        </p>
+                    </div>
+                    <div style="flex: 0 0 45%;"></div>
+                </div>
+            </div>
+            
+            <div class="insights">
+                <h3>📊 数据洞察与分析</h3>
+                <ul>
+                    <li><strong>私域营销表现：</strong>私域渠道贡献12.5%营业额（49440.33元），其中好友渠道12.4%，社群渠道4.1%，好友与社群渠道中存在一定的重合。私域渠道仍有较大提升空间，建议加强私域运营力度</li>
+                    <li><strong>渠道转化效率：</strong>社群转化率8.4%高于好友2.0%，说明社群运营效果相对较好。但整体转化率偏低，建议优化私域内容策略，提升用户活跃度和转化意愿</li>
+                    <li><strong>用户增长动力：</strong>新增好友708人，新增群成员807人，用户增长保持稳定。建议继续加强拉新活动，同时提升好友入群转化率，扩大社群影响力</li>
+                    <li><strong>星期模式分析：</strong>周末（周六、日）营业额相对较高，工作日营业额相对平稳。建议在周末加强营销活动，提升周末业绩表现</li>
+                    <li><strong>门店运营分析：</strong>单店日均营业额¥388，33家门店运营情况存在差异。在制定KPI目标时应结合各门店实际营业情况，制定差异化目标，避免一刀切</li>
+                    <li><strong>客单价分析：</strong>总体客单价¥153，好友渠道¥135，社群渠道¥127，私域客单价略低于总体客单价。建议通过优化产品组合、提升服务质量等方式，提高私域客单价</li>
+                </ul>
+            </div>
+            
+            <div class="performance-model" style="background: #f8f9fa; border: 2px solid #3498db; border-radius: 15px; padding: 30px; margin: 30px 0;">
+                <h3 style="color: #2c3e50; text-align: center; margin-bottom: 25px; font-size: 1.6em;">📊 私域KPI绩效模拟器</h3>
+                
+                <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow-x: auto;">
+                    <table id="kpi-simulator-table" style="width: 100%; border-collapse: collapse; font-size: 13px; background: white; min-width: 1000px;">
+  <tr style="height: auto; min-height: 120px;">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #E3F2FD;" id="cell-A1" data-coord="A1" colspan="2" >关键指标</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; color: #FF0000; font-weight: bold; background: #E3F2FD;" id="cell-C1" data-coord="C1" >业绩目标增长率：</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #E3F2FD; cursor: text;" colspan="2"><div style="display: inline-flex; align-items: center; justify-content: center; width: 100%;"><input type="number" step="0.01" id="cell-D1" data-coord="D1" data-percentage="true" value="6.00" style="border: none; background: transparent; text-align: center; padding: 0; width: auto; min-width: 50px;" onchange="updateCell('D1')" oninput="updateCellInput('D1')"><span style="margin-left: 2px; color: #333;">%</span></div></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; color: #FF0000; font-weight: bold; background: #E3F2FD;" id="cell-F1" data-coord="F1" >奖金比例：</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #E3F2FD; cursor: text;" colspan="4"><div style="display: inline-flex; align-items: center; justify-content: center; width: 100%;"><input type="number" step="0.01" id="cell-G1" data-coord="G1" data-percentage="true" value="3.00" style="border: none; background: transparent; text-align: center; padding: 0; width: auto; min-width: 50px;" onchange="updateCell('G1')" oninput="updateCellInput('G1')"><span style="margin-left: 2px; color: #333;">%</span></div></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-A2" data-coord="A2" rowspan="3" >上月经营现状</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-B2" data-coord="B2" >类型</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-C2" data-coord="C2" >营业额</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-D2" data-coord="D2" >订单数</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-E2" data-coord="E2" >客单价</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-F2" data-coord="F2" >客户体量</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-G2" data-coord="G2" >拉新</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-H2" data-coord="H2" >净增</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-I2" data-coord="I2" >期末体量</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-J2" data-coord="J2" data-percentage="true" >综合转化率</td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4;" id="cell-B3" data-coord="B3" >好友</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: text;"><input type="number" step="1" id="cell-C3" data-coord="C3" data-percentage="false" value="49122.69" style="width: 100%; border: none; background: transparent; text-align: center; padding: 0;" onchange="updateCell('C3')" oninput="updateCellInput('C3')"></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: text;"><input type="number" step="1" id="cell-D3" data-coord="D3" data-percentage="false" value="363" style="width: 100%; border: none; background: transparent; text-align: center; padding: 0;" onchange="updateCell('D3')" oninput="updateCellInput('D3')"></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-E3" data-coord="E3" data-formula="=C3/D3" contenteditable="false" >135.32</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: text;"><input type="number" step="1" id="cell-F3" data-coord="F3" data-percentage="false" value="18563" style="width: 100%; border: none; background: transparent; text-align: center; padding: 0;" onchange="updateCell('F3')" oninput="updateCellInput('F3')"></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: text;"><input type="number" step="1" id="cell-G3" data-coord="G3" data-percentage="false" value="708" style="width: 100%; border: none; background: transparent; text-align: center; padding: 0;" onchange="updateCell('G3')" oninput="updateCellInput('G3')"></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-H3" data-coord="H3" data-formula="=I3-F3" contenteditable="false" >708</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: text;"><input type="number" step="1" id="cell-I3" data-coord="I3" data-percentage="false" value="19271" style="width: 100%; border: none; background: transparent; text-align: center; padding: 0;" onchange="updateCell('I3')" oninput="updateCellInput('I3')"></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-J3" data-coord="J3" data-formula="=D3/((F3+I3)/2)" contenteditable="false" data-percentage="true" >1.92%</td>
+  </tr>
+  <tr style="height: auto; min-height: 30px;">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;white-space: normal; word-wrap: break-word; line-height: 1.3; background: #FCE4EC;" id="cell-B4" data-coord="B4" >私域总去重</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;white-space: normal; word-wrap: break-word; line-height: 1.3; background: #FCE4EC; cursor: text;"><input type="number" step="1" id="cell-C4" data-coord="C4" data-percentage="false" value="49440.33" style="width: 100%; border: none; background: transparent; text-align: center; padding: 0;" onchange="updateCell('C4')" oninput="updateCellInput('C4')"></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;white-space: normal; word-wrap: break-word; line-height: 1.3; background: #FCE4EC; cursor: text;"><input type="number" step="1" id="cell-D4" data-coord="D4" data-percentage="false" value="365" style="width: 100%; border: none; background: transparent; text-align: center; padding: 0;" onchange="updateCell('D4')" oninput="updateCellInput('D4')"></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;white-space: normal; word-wrap: break-word; line-height: 1.3; background: #FCE4EC; cursor: not-allowed;" id="cell-E4" data-coord="E4" data-formula="=C4/D4" contenteditable="false" >135.45</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;white-space: normal; word-wrap: break-word; line-height: 1.3; background: #FCE4EC; cursor: text;"><input type="number" step="1" id="cell-F4" data-coord="F4" data-percentage="false" value="20059" style="width: 100%; border: none; background: transparent; text-align: center; padding: 0;" onchange="updateCell('F4')" oninput="updateCellInput('F4')"></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;white-space: normal; word-wrap: break-word; line-height: 1.3; background: #FCE4EC; cursor: text;"><input type="number" step="1" id="cell-G4" data-coord="G4" data-percentage="false" value="1515" style="width: 100%; border: none; background: transparent; text-align: center; padding: 0;" onchange="updateCell('G4')" oninput="updateCellInput('G4')"></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;white-space: normal; word-wrap: break-word; line-height: 1.3; background: #FCE4EC; cursor: not-allowed;" id="cell-H4" data-coord="H4" data-formula="=I4-F4" contenteditable="false" >1515</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;white-space: normal; word-wrap: break-word; line-height: 1.3; background: #FCE4EC; cursor: text;"><input type="number" step="1" id="cell-I4" data-coord="I4" data-percentage="false" value="21574" style="width: 100%; border: none; background: transparent; text-align: center; padding: 0;" onchange="updateCell('I4')" oninput="updateCellInput('I4')"></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;white-space: normal; word-wrap: break-word; line-height: 1.3; background: #FCE4EC; cursor: not-allowed;" id="cell-J4" data-coord="J4" data-formula="=D4/((F4+I4)/2)" contenteditable="false" data-percentage="true" >1.75%</td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-A5" data-coord="A5" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-B5" data-coord="B5" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-C5" data-coord="C5" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-D5" data-coord="D5" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-E5" data-coord="E5" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-F5" data-coord="F5" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-G5" data-coord="G5" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-H5" data-coord="H5" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-I5" data-coord="I5" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-J5" data-coord="J5" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-A6" data-coord="A6" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-B6" data-coord="B6" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-C6" data-coord="C6" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-D6" data-coord="D6" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-E6" data-coord="E6" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-F6" data-coord="F6" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-G6" data-coord="G6" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-H6" data-coord="H6" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-I6" data-coord="I6" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-J6" data-coord="J6" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-A7" data-coord="A7" rowspan="4" >本月KPI</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-B7" data-coord="B7" rowspan="2" >类型</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-C7" data-coord="C7" colspan="2" >直接业绩目标</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-E7" data-coord="E7" colspan="5" >业绩拆解过程量</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-J7" data-coord="J7" data-percentage="true" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-C8" data-coord="C8" data-percentage="true" >目标增长率</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-D8" data-coord="D8" data-percentage="true" >目标营业额</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-E8" data-coord="E8" >拉新目标</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-F8" data-coord="F8" >净增目标</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-G8" data-coord="G8" >期末体量目标</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-H8" data-coord="H8" data-percentage="true" >转化率提升目标</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-I8" data-coord="I8" >客单价目标</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-J8" data-coord="J8" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4;" id="cell-B9" data-coord="B9" >好友</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-C9" data-coord="C9" data-formula="=D1" contenteditable="false" data-percentage="true" >6.00%</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-D9" data-coord="D9" data-formula="=(1+C9)*C3" contenteditable="false" >10,200,547</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-E9" data-coord="E9" data-formula="=F9*(G3/H3)" contenteditable="false" >59,979.41</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-F9" data-coord="F9" data-formula="=G9-I3" contenteditable="false" >28,019.84</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-G9" data-coord="G9" data-formula="=(D9/((J3+H9)*I9))*2-I3" contenteditable="false" >673,419.84</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: text;"><div style="display: inline-flex; align-items: center; justify-content: center; width: 100%;"><input type="number" step="0.01" id="cell-H9" data-coord="H9" data-percentage="true" value="0.30" style="border: none; background: transparent; text-align: center; padding: 0; width: auto; min-width: 50px;" onchange="updateCell('H9')" oninput="updateCellInput('H9')"><span style="margin-left: 2px; color: #333;">%</span></div></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: text;"><input type="number" step="1" id="cell-I9" data-coord="I9" data-percentage="false" value="116.44" style="width: 100%; border: none; background: transparent; text-align: center; padding: 0;" onchange="updateCell('I9')" oninput="updateCellInput('I9')"></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4;" id="cell-J9" data-coord="J9" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC;" id="cell-B10" data-coord="B10" >私域总去重</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: not-allowed;" id="cell-C10" data-coord="C10" data-formula="=D1" contenteditable="false" data-percentage="true" >6.00%</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: not-allowed;" id="cell-D10" data-coord="D10" data-formula="=(1+C10)*C4" contenteditable="false" >10,837,940</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: not-allowed;" id="cell-E10" data-coord="E10" data-formula="=F10*(G4/H4)" contenteditable="false" >69,152.58</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: not-allowed;" id="cell-F10" data-coord="F10" data-formula="=G10-I4" contenteditable="false" >31,068.18</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: not-allowed;" id="cell-G10" data-coord="G10" data-formula="=(D10/((J4+H10)*I10))*2-I4" contenteditable="false" >729,082.18</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: text;"><div style="display: inline-flex; align-items: center; justify-content: center; width: 100%;"><input type="number" step="0.01" id="cell-H10" data-coord="H10" data-percentage="true" value="0.30" style="border: none; background: transparent; text-align: center; padding: 0; width: auto; min-width: 50px;" onchange="updateCell('H10')" oninput="updateCellInput('H10')"><span style="margin-left: 2px; color: #333;">%</span></div></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: text;"><input type="number" step="1" id="cell-I10" data-coord="I10" data-percentage="false" value="116.06" style="width: 100%; border: none; background: transparent; text-align: center; padding: 0;" onchange="updateCell('I10')" oninput="updateCellInput('I10')"></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC;" id="cell-J10" data-coord="J10" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-A11" data-coord="A11" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-B11" data-coord="B11" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-C11" data-coord="C11" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-D11" data-coord="D11" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-E11" data-coord="E11" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-F11" data-coord="F11" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-G11" data-coord="G11" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-H11" data-coord="H11" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-I11" data-coord="I11" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-J11" data-coord="J11" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-A12" data-coord="A12" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-B12" data-coord="B12" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-C12" data-coord="C12" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-D12" data-coord="D12" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-E12" data-coord="E12" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-F12" data-coord="F12" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-G12" data-coord="G12" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-H12" data-coord="H12" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-I12" data-coord="I12" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-J12" data-coord="J12" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-A13" data-coord="A13" rowspan="3" >业绩完成激励分析</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-B13" data-coord="B13" >类型</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-C13" data-coord="C13" >完成百分比</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-D13" data-coord="D13" >完成营业额</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-E13" data-coord="E13" >绩效奖金</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-F13" data-coord="F13" >净增营业额</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-G13" data-coord="G13" >毛利率</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-H13" data-coord="H13" >净增毛利</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-I13" data-coord="I13" >扣除奖金后老板净利润</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-J13" data-coord="J13" data-percentage="true" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4;" id="cell-B14" data-coord="B14" >好友</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: text;"><div style="display: inline-flex; align-items: center; justify-content: center; width: 100%;"><input type="number" step="0.01" id="cell-C14" data-coord="C14" data-percentage="true" value="100" style="border: none; background: transparent; text-align: center; padding: 0; width: auto; min-width: 50px;" onchange="updateCell('C14')" oninput="updateCellInput('C14')"><span style="margin-left: 2px; color: #333;">%</span></div></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-D14" data-coord="D14" data-formula="=D9*C14" contenteditable="false" >10,200,547</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-E14" data-coord="E14" data-formula="=D14*G1*C14" contenteditable="false" >306,016.42</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-F14" data-coord="F14" data-formula="=D14-C3" contenteditable="false" >577,389.48</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: text;"><div style="display: inline-flex; align-items: center; justify-content: center; width: 100%;"><input type="number" step="0.01" id="cell-G14" data-coord="G14" data-percentage="true" value="60.00" style="border: none; background: transparent; text-align: center; padding: 0; width: auto; min-width: 50px;" onchange="updateCell('G14')" oninput="updateCellInput('G14')"><span style="margin-left: 2px; color: #333;">%</span></div></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-H14" data-coord="H14" data-formula="=F14*G14" contenteditable="false" >346,433.69</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-I14" data-coord="I14" data-formula="=H14-E14" contenteditable="false" >40,417.26</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4;" id="cell-J14" data-coord="J14" data-percentage="true" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC;" id="cell-B15" data-coord="B15" >私域总去重</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: text;"><div style="display: inline-flex; align-items: center; justify-content: center; width: 100%;"><input type="number" step="0.01" id="cell-C15" data-coord="C15" data-percentage="true" value="100" style="border: none; background: transparent; text-align: center; padding: 0; width: auto; min-width: 50px;" onchange="updateCell('C15')" oninput="updateCellInput('C15')"><span style="margin-left: 2px; color: #333;">%</span></div></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: not-allowed;" id="cell-D15" data-coord="D15" data-formula="=D10*C15" contenteditable="false" >10,837,940</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: not-allowed;" id="cell-E15" data-coord="E15" data-formula="=D15*G1*C15" contenteditable="false" >325,138.21</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: not-allowed;" id="cell-F15" data-coord="F15" data-formula="=D15-C4" contenteditable="false" >613,468.32</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: text;"><div style="display: inline-flex; align-items: center; justify-content: center; width: 100%;"><input type="number" step="0.01" id="cell-G15" data-coord="G15" data-percentage="true" value="60.00" style="border: none; background: transparent; text-align: center; padding: 0; width: auto; min-width: 50px;" onchange="updateCell('G15')" oninput="updateCellInput('G15')"><span style="margin-left: 2px; color: #333;">%</span></div></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: not-allowed;" id="cell-H15" data-coord="H15" data-formula="=F15*G15" contenteditable="false" >368,080.99</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: not-allowed;" id="cell-I15" data-coord="I15" data-formula="=H15-E15" contenteditable="false" >42,942.78</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC;" id="cell-J15" data-coord="J15" data-percentage="true" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-A16" data-coord="A16" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-B16" data-coord="B16" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-C16" data-coord="C16" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-D16" data-coord="D16" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-E16" data-coord="E16" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-F16" data-coord="F16" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-G16" data-coord="G16" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-H16" data-coord="H16" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-I16" data-coord="I16" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-J16" data-coord="J16" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-A17" data-coord="A17" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-B17" data-coord="B17" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-C17" data-coord="C17" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-D17" data-coord="D17" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-E17" data-coord="E17" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-F17" data-coord="F17" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-G17" data-coord="G17" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-H17" data-coord="H17" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-I17" data-coord="I17" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-J17" data-coord="J17" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-A18" data-coord="A18" rowspan="3" >按好友业绩分配</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-B18" data-coord="B18" >分配角色</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-C18" data-coord="C18" >分配比例</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-D18" data-coord="D18" >分配金额</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-E18" data-coord="E18" >人数</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-F18" data-coord="F18" >平均分配金额</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-G18" data-coord="G18" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-H18" data-coord="H18" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-I18" data-coord="I18" data-percentage="true" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-J18" data-coord="J18" data-percentage="true" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4;" id="cell-B19" data-coord="B19" >管理层</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: text;"><div style="display: inline-flex; align-items: center; justify-content: center; width: 100%;"><input type="number" step="0.01" id="cell-C19" data-coord="C19" data-percentage="true" value="15.00" style="border: none; background: transparent; text-align: center; padding: 0; width: auto; min-width: 50px;" onchange="updateCell('C19')" oninput="updateCellInput('C19')"><span style="margin-left: 2px; color: #333;">%</span></div></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-D19" data-coord="D19" data-formula="=C19*E14" contenteditable="false" >45,902.46</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: text;"><input type="number" step="1" id="cell-E19" data-coord="E19" data-percentage="false" value="39" style="width: 100%; border: none; background: transparent; text-align: center; padding: 0;" onchange="updateCell('E19')" oninput="updateCellInput('E19')"></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-F19" data-coord="F19" data-formula="=D19/E19" contenteditable="false" >1,176.99</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4;" id="cell-G19" data-coord="G19" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4;" id="cell-H19" data-coord="H19" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4;" id="cell-I19" data-coord="I19" data-percentage="true" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4;" id="cell-J19" data-coord="J19" data-percentage="true" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4;" id="cell-B20" data-coord="B20" >执行层</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-C20" data-coord="C20" data-formula="=1-C19" contenteditable="false" data-percentage="true" >85.00%</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-D20" data-coord="D20" data-formula="=C20*E14" contenteditable="false" >260,113.96</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: text;"><input type="number" step="1" id="cell-E20" data-coord="E20" data-percentage="false" value="33" style="width: 100%; border: none; background: transparent; text-align: center; padding: 0;" onchange="updateCell('E20')" oninput="updateCellInput('E20')"></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4; cursor: not-allowed;" id="cell-F20" data-coord="F20" data-formula="=D20/E20" contenteditable="false" >720.54</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4;" id="cell-G20" data-coord="G20" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4;" id="cell-H20" data-coord="H20" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4;" id="cell-I20" data-coord="I20" data-percentage="true" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FFF9C4;" id="cell-J20" data-coord="J20" data-percentage="true" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-A21" data-coord="A21" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-B21" data-coord="B21" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-C21" data-coord="C21" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-D21" data-coord="D21" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-E21" data-coord="E21" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-F21" data-coord="F21" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-G21" data-coord="G21" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-H21" data-coord="H21" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-I21" data-coord="I21" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-J21" data-coord="J21" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-A22" data-coord="A22" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-B22" data-coord="B22" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-C22" data-coord="C22" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-D22" data-coord="D22" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-E22" data-coord="E22" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-F22" data-coord="F22" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-G22" data-coord="G22" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-H22" data-coord="H22" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-I22" data-coord="I22" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle;" id="cell-J22" data-coord="J22" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-A23" data-coord="A23" rowspan="3" >按私域总分配</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-B23" data-coord="B23" >分配角色</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-C23" data-coord="C23" >分配比例</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-D23" data-coord="D23" >分配金额</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-E23" data-coord="E23" >人数</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-F23" data-coord="F23" >平均分配金额</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-G23" data-coord="G23" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-H23" data-coord="H23" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-I23" data-coord="I23" data-percentage="true" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #6BD9A0;" id="cell-J23" data-coord="J23" data-percentage="true" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC;" id="cell-B24" data-coord="B24" >管理层</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: text;"><div style="display: inline-flex; align-items: center; justify-content: center; width: 100%;"><input type="number" step="0.01" id="cell-C24" data-coord="C24" data-percentage="true" value="15.00" style="border: none; background: transparent; text-align: center; padding: 0; width: auto; min-width: 50px;" onchange="updateCell('C24')" oninput="updateCellInput('C24')"><span style="margin-left: 2px; color: #333;">%</span></div></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: not-allowed;" id="cell-D24" data-coord="D24" data-formula="=E15*C24" contenteditable="false" >48,770.73</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: text;"><input type="number" step="1" id="cell-E24" data-coord="E24" data-percentage="false" value="39" style="width: 100%; border: none; background: transparent; text-align: center; padding: 0;" onchange="updateCell('E24')" oninput="updateCellInput('E24')"></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: not-allowed;" id="cell-F24" data-coord="F24" data-formula="=D24/E24" contenteditable="false" >1,250.53</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC;" id="cell-G24" data-coord="G24" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC;" id="cell-H24" data-coord="H24" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC;" id="cell-I24" data-coord="I24" data-percentage="true" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC;" id="cell-J24" data-coord="J24" data-percentage="true" ></td>
+  </tr>
+  <tr style="">
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC;" id="cell-B25" data-coord="B25" >执行层</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: not-allowed;" id="cell-C25" data-coord="C25" data-formula="=1-C24" contenteditable="false" data-percentage="true" >85.00%</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: not-allowed;" id="cell-D25" data-coord="D25" data-formula="=E15*C25" contenteditable="false" >276,367.48</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: text;"><input type="number" step="1" id="cell-E25" data-coord="E25" data-percentage="false" value="33" style="width: 100%; border: none; background: transparent; text-align: center; padding: 0;" onchange="updateCell('E25')" oninput="updateCellInput('E25')"></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC; cursor: not-allowed;" id="cell-F25" data-coord="F25" data-formula="=D25/E25" contenteditable="false" >765.56</td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC;" id="cell-G25" data-coord="G25" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC;" id="cell-H25" data-coord="H25" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC;" id="cell-I25" data-coord="I25" data-percentage="true" ></td>
+    <td style="padding: 6px 8px; border: 1px solid #ddd; text-align: center; vertical-align: middle; background: #FCE4EC;" id="cell-J25" data-coord="J25" data-percentage="true" ></td>
+  </tr>
+</table>
+
+    <script>
+    // KPI模拟器数据
+    const kpiFormulas = {"E3": "=C3/D3", "H3": "=I3-F3", "J3": "=D3/((F3+I3)/2)", "E4": "=C4/D4", "H4": "=I4-F4", "J4": "=D4/((F4+I4)/2)", "C9": "=D1", "D9": "=(1+C9)*C3", "E9": "=F9*(G3/H3)", "F9": "=G9-I3", "G9": "=(D9/((J3+H9)*I9))*2-I3", "C10": "=D1", "D10": "=(1+C10)*C4", "E10": "=F10*(G4/H4)", "F10": "=G10-I4", "G10": "=(D10/((J4+H10)*I10))*2-I4", "D14": "=D9*C14", "E14": "=D14*G1*C14", "F14": "=D14-C3", "H14": "=F14*G14", "I14": "=H14-E14", "D15": "=D10*C15", "E15": "=D15*G1*C15", "F15": "=D15-C4", "H15": "=F15*G15", "I15": "=H15-E15", "D19": "=C19*E14", "F19": "=D19/E19", "C20": "=1-C19", "D20": "=C20*E14", "F20": "=D20/E20", "D24": "=E15*C24", "F24": "=D24/E24", "C25": "=1-C24", "D25": "=E15*C25", "F25": "=D25/E25"};
+    const cellValues = {};
+    
+    // 初始化单元格值
+    function initCellValues() {
+        const cells = document.querySelectorAll('[id^="cell-"]');
+        cells.forEach(cell => {
+            const coord = cell.getAttribute('data-coord');
+            const input = cell.tagName === 'INPUT' ? cell : null;
+            const display = cell.tagName === 'TD' ? cell : null;
+            
+            if (input) {
+                // 输入框的值已经是百分比形式（如6表示6%），需要转换为小数存储
+                let val = parseFloat(input.value) || 0;
+                if (input.getAttribute('data-percentage') === 'true') {
+                    cellValues[coord] = val / 100;
+                } else {
+                    cellValues[coord] = val;
+                }
+            } else if (display) {
+                // 显示单元格：如果是百分比，文本可能是"6%"或"0.06"，需要统一处理
+                let text = display.textContent.trim();
+                text = text.replace('%', '').replace(',', '');
+                let val = parseFloat(text);
+                if (!isNaN(val)) {
+                    if (display.getAttribute('data-percentage') === 'true') {
+                        // 如果值大于1，说明已经是百分比形式，需要除以100
+                        // 如果值小于1，说明已经是小数形式，直接使用
+                        if (val >= 1) {
+                            cellValues[coord] = val / 100;
+                        } else {
+                            cellValues[coord] = val;
+                        }
+                    } else {
+                        cellValues[coord] = val;
+                    }
+                }
+            }
+        });
+    }
+    
+    // 解析Excel公式
+    function parseFormula(formula) {
+        if (!formula || !formula.startsWith('=')) return null;
+        
+        // 移除等号
+        let expr = formula.substring(1);
+        
+        // 替换单元格引用为实际值（支持多列，如AA, AB等）
+        const cellRefRegex = /([A-Z]+)(\d+)/g;
+        expr = expr.replace(cellRefRegex, (match, col, row) => {
+            const coord = col + row;
+            const val = cellValues[coord];
+            if (val === undefined || val === null || isNaN(val)) {
+                return 0;
+            }
+            return val;
+        });
+        
+        try {
+            // 使用Function构造器安全地计算表达式
+            // 确保表达式是安全的数学表达式
+            if (!/^[0-9+\-*/().\s]+$/.test(expr.replace(/\d+\.\d+/g, '').replace(/\d+/g, ''))) {
+                console.warn('公式包含不安全字符:', formula);
+            }
+            const result = Function('"use strict"; return (' + expr + ')')();
+            return isNaN(result) ? 0 : result;
+        } catch (e) {
+            console.error('公式计算错误:', formula, e);
+            return 0;
+        }
+    }
+    
+    // 更新单元格输入（实时）
+    function updateCellInput(coord) {
+        const input = document.getElementById('cell-' + coord);
+        if (!input) return;
+        
+        let val = parseFloat(input.value);
+        if (isNaN(val)) {
+            val = 0;
+        }
+        
+        // 对于百分比输入，用户输入的是百分比数字（如6表示6%），需要转换为小数（0.06）存储
+        if (input.getAttribute('data-percentage') === 'true') {
+            cellValues[coord] = val / 100;
+        } else {
+            cellValues[coord] = val;
+        }
+        
+        // 触发计算
+        calculateAllFormulas();
+    }
+    
+    // 更新单元格（失焦时）
+    function updateCell(coord) {
+        updateCellInput(coord);
+        calculateAllFormulas();
+    }
+    
+    // 计算所有公式
+    function calculateAllFormulas() {
+        // 按依赖顺序计算（简单实现：多次迭代直到收敛）
+        let changed = true;
+        let iterations = 0;
+        const maxIterations = 10;
+        
+        while (changed && iterations < maxIterations) {
+            changed = false;
+            iterations++;
+            
+            for (const [coord, formula] of Object.entries(kpiFormulas)) {
+                const cell = document.getElementById('cell-' + coord);
+                if (!cell) continue;
+                
+                const oldValue = cellValues[coord] || 0;
+                const newValue = parseFormula(formula);
+                
+                if (newValue !== null && Math.abs(newValue - (oldValue || 0)) > 0.0001) {
+                    cellValues[coord] = newValue;
+                    
+                    // 更新显示
+                    const isPercentage = cell.getAttribute('data-percentage') === 'true';
+                    if (isPercentage) {
+                        // 百分比：如果值小于1，乘以100显示；如果大于等于1，直接显示
+                        if (newValue < 1) {
+                            cell.textContent = (newValue * 100).toFixed(2) + '%';
+                        } else {
+                            cell.textContent = newValue.toFixed(2) + '%';
+                        }
+                    } else {
+                        if (Math.abs(newValue) >= 1000) {
+                            cell.textContent = newValue.toLocaleString('zh-CN', {maximumFractionDigits: 0});
+                        } else if (Math.abs(newValue) < 1) {
+                            cell.textContent = newValue.toFixed(4);
+                        } else {
+                            cell.textContent = newValue.toFixed(2);
+                        }
+                    }
+                    changed = true;
+                }
+            }
+        }
+    }
+    
+    // 页面加载时初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        initCellValues();
+        calculateAllFormulas();
+    });
+    </script>
+    
+                </div>
+            </div>
+            
+            <div class="footer">
+                <p>本报表由AI数据分析系统自动生成 | 数据来源：金柱大盘鸡营业额汇总分析</p>
+            </div>
+        </div>
+        
+        <script>
+            // 渲染图表
+            Plotly.newPlot('private-domain-chart', {"data":[{"hovertemplate":"日期: %{text}<br>总营业额: %{y:.2f}万元<extra></extra>","line":{"color":"#1f77b4","width":3},"marker":{"size":6},"mode":"lines+markers","name":"总营业额","text":["11-29（六）","11-30（日）","12-01（一）","12-02（二）","12-03（三）","12-04（四）","12-05（五）","12-06（六）","12-07（日）","12-08（一）","12-09（二）","12-10（三）","12-11（四）","12-12（五）","12-13（六）","12-14（日）","12-15（一）","12-16（二）","12-17（三）","12-18（四）","12-19（五）","12-20（六）","12-21（日）","12-22（一）","12-23（二）","12-24（三）","12-25（四）","12-26（五）","12-27（六）","12-28（日）","12-29（一）"],"x":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30],"y":[1.631512,1.376387,0.623876,1.115415,1.312448,1.16721,1.470837,1.589866,1.531752,1.075882,0.94865,1.367818,1.25747,1.298088,1.614654,1.411062,1.085704,1.284108,1.223544,1.188794,1.576173,1.653945,1.345632,0.89727,1.358554,0.955501,1.247298,1.564143,1.655402,1.478453,0.361435],"type":"scatter"},{"hovertemplate":"日期: %{text}<br>好友营业额: %{y:.2f}万元<extra></extra>","line":{"color":"#ff7f0e","width":2},"marker":{"size":5},"mode":"lines+markers","name":"好友营业额","text":["11-29（六）","11-30（日）","12-01（一）","12-02（二）","12-03（三）","12-04（四）","12-05（五）","12-06（六）","12-07（日）","12-08（一）","12-09（二）","12-10（三）","12-11（四）","12-12（五）","12-13（六）","12-14（日）","12-15（一）","12-16（二）","12-17（三）","12-18（四）","12-19（五）","12-20（六）","12-21（日）","12-22（一）","12-23（二）","12-24（三）","12-25（四）","12-26（五）","12-27（六）","12-28（日）","12-29（一）"],"x":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30],"y":[0.247225,0.163087,0.113527,0.17962,0.170941,0.154531,0.145039,0.206111,0.21386,0.080416,0.070518,0.106346,0.052237,0.202356,0.129608,0.182008,0.1016,0.157598,0.152182,0.224668,0.179443,0.19396,0.194489,0.099551,0.17461,0.170124,0.163869,0.191791,0.20613,0.275842,0.008982],"type":"scatter"},{"hovertemplate":"日期: %{text}<br>社群营业额: %{y:.2f}万元<extra></extra>","line":{"color":"#2ca02c","width":2},"marker":{"size":5},"mode":"lines+markers","name":"社群营业额","text":["11-29（六）","11-30（日）","12-01（一）","12-02（二）","12-03（三）","12-04（四）","12-05（五）","12-06（六）","12-07（日）","12-08（一）","12-09（二）","12-10（三）","12-11（四）","12-12（五）","12-13（六）","12-14（日）","12-15（一）","12-16（二）","12-17（三）","12-18（四）","12-19（五）","12-20（六）","12-21（日）","12-22（一）","12-23（二）","12-24（三）","12-25（四）","12-26（五）","12-27（六）","12-28（日）","12-29（一）"],"x":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30],"y":[0.0651,0.023052,0.043183,0.053573,0.0264,0.054749,0.070623,0.053321,0.101105,0.020309,0.070518,0.014091,0.0,0.084117,0.021164,0.079236,0.061327,0.032608,0.026364,0.046538,0.053672,0.052903,0.111191,0.038844,0.057945,0.0418,0.029291,0.099272,0.114447,0.050661,0.008982],"type":"scatter"}],"layout":{"xaxis":{"title":{"text":"日期"},"tickmode":"array","tickvals":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30],"ticktext":["11-29（六）","11-30（日）","12-01（一）","12-02（二）","12-03（三）","12-04（四）","12-05（五）","12-06（六）","12-07（日）","12-08（一）","12-09（二）","12-10（三）","12-11（四）","12-12（五）","12-13（六）","12-14（日）","12-15（一）","12-16（二）","12-17（三）","12-18（四）","12-19（五）","12-20（六）","12-21（日）","12-22（一）","12-23（二）","12-24（三）","12-25（四）","12-26（五）","12-27（六）","12-28（日）","12-29（一）"],"tickangle":45},"title":{"font":{"size":24,"color":"#2c3e50"},"text":"私域营业额分析","x":0.5},"legend":{"x":0.02,"y":0.98},"margin":{"b":100},"yaxis":{"title":{"text":"金额 (万元)"}},"height":500,"showlegend":true,"hovermode":"x unified"}});
+            Plotly.newPlot('revenue-trend', {"data":[{"customdata":[3436.0,2884.0,1505.0,2247.0,2915.0,3350.0,3755.0,2986.0,3293.0,2960.0,2970.0,3737.0,3037.98,2584.0,3507.0,2187.0,2595.0,3813.0,3703.0,2447.0,2574.0,3159.0,2196.0,2756.0,4013.0,2158.0,3488.0,3197.0,4647.0,2374.0,1295.0],"hovertemplate":"日期: %{text}<br>最高营业额: ¥%{y:,.0f}<extra></extra>","line":{"color":"#2ca02c","width":2},"marker":{"size":5},"mode":"lines+markers","name":"最高营业额","text":["11-29（六）","11-30（日）","12-01（一）","12-02（二）","12-03（三）","12-04（四）","12-05（五）","12-06（六）","12-07（日）","12-08（一）","12-09（二）","12-10（三）","12-11（四）","12-12（五）","12-13（六）","12-14（日）","12-15（一）","12-16（二）","12-17（三）","12-18（四）","12-19（五）","12-20（六）","12-21（日）","12-22（一）","12-23（二）","12-24（三）","12-25（四）","12-26（五）","12-27（六）","12-28（日）","12-29（一）"],"x":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30],"y":[3436.0,2884.0,1505.0,2247.0,2915.0,3350.0,3755.0,2986.0,3293.0,2960.0,2970.0,3737.0,3037.98,2584.0,3507.0,2187.0,2595.0,3813.0,3703.0,2447.0,2574.0,3159.0,2196.0,2756.0,4013.0,2158.0,3488.0,3197.0,4647.0,2374.0,1295.0],"type":"scatter"},{"customdata":[494.397576,474.616207,415.917333,413.116667,546.853333,583.605,668.562273,567.809286,478.6725,467.774783,451.738095,547.1272,483.642308,463.602857,556.777241,440.956875,472.045217,558.307826,611.772,495.330833,583.767778,590.694643,585.057391,427.271429,590.675652,455.000476,498.9192,579.312222,570.828276,547.575185,328.577273],"hovertemplate":"日期: %{text}<br>平均营业额: ¥%{y:,.0f}<extra></extra>","line":{"color":"#ff7f0e","width":2},"marker":{"size":5},"mode":"lines+markers","name":"平均营业额","text":["11-29（六）","11-30（日）","12-01（一）","12-02（二）","12-03（三）","12-04（四）","12-05（五）","12-06（六）","12-07（日）","12-08（一）","12-09（二）","12-10（三）","12-11（四）","12-12（五）","12-13（六）","12-14（日）","12-15（一）","12-16（二）","12-17（三）","12-18（四）","12-19（五）","12-20（六）","12-21（日）","12-22（一）","12-23（二）","12-24（三）","12-25（四）","12-26（五）","12-27（六）","12-28（日）","12-29（一）"],"x":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30],"y":[494.397576,474.616207,415.917333,413.116667,546.853333,583.605,668.562273,567.809286,478.6725,467.774783,451.738095,547.1272,483.642308,463.602857,556.777241,440.956875,472.045217,558.307826,611.772,495.330833,583.767778,590.694643,585.057391,427.271429,590.675652,455.000476,498.9192,579.312222,570.828276,547.575185,328.577273],"type":"scatter"},{"customdata":[0.0,12.81,0.0,0.0,49.09,59.0,116.0,94.55,56.0,72.0,94.55,6.0,90.0,0.0,0.0,94.54,0.0,0.0,98.18,92.73,0.0,0.0,103.64,92.73,9.1,90.0,64.5,18.19,0.0,42.0,7.0],"hovertemplate":"日期: %{text}<br>最低营业额: ¥%{y:,.0f}<extra></extra>","line":{"color":"#d62728","width":2},"marker":{"size":5},"mode":"lines+markers","name":"最低营业额","text":["11-29（六）","11-30（日）","12-01（一）","12-02（二）","12-03（三）","12-04（四）","12-05（五）","12-06（六）","12-07（日）","12-08（一）","12-09（二）","12-10（三）","12-11（四）","12-12（五）","12-13（六）","12-14（日）","12-15（一）","12-16（二）","12-17（三）","12-18（四）","12-19（五）","12-20（六）","12-21（日）","12-22（一）","12-23（二）","12-24（三）","12-25（四）","12-26（五）","12-27（六）","12-28（日）","12-29（一）"],"x":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30],"y":[0.0,12.81,0.0,0.0,49.09,59.0,116.0,94.55,56.0,72.0,94.55,6.0,90.0,0.0,0.0,94.54,0.0,0.0,98.18,92.73,0.0,0.0,103.64,92.73,9.1,90.0,64.5,18.19,0.0,42.0,7.0],"type":"scatter"}],"layout":{"xaxis":{"title":{"text":"日期"},"tickmode":"array","tickvals":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30],"ticktext":["11-29（六）","11-30（日）","12-01（一）","12-02（二）","12-03（三）","12-04（四）","12-05（五）","12-06（六）","12-07（日）","12-08（一）","12-09（二）","12-10（三）","12-11（四）","12-12（五）","12-13（六）","12-14（日）","12-15（一）","12-16（二）","12-17（三）","12-18（四）","12-19（五）","12-20（六）","12-21（日）","12-22（一）","12-23（二）","12-24（三）","12-25（四）","12-26（五）","12-27（六）","12-28（日）","12-29（一）"],"tickangle":45},"title":{"font":{"size":24,"color":"#2c3e50"},"text":"门店营业额分析","x":0.5},"legend":{"x":0.02,"y":0.98},"hoverlabel":{"font":{"size":12,"family":"Microsoft YaHei, Arial, sans-serif"},"bgcolor":"white","bordercolor":"#2c3e50"},"margin":{"b":100},"yaxis":{"title":{"text":"金额 (元)"}},"height":500,"showlegend":true,"hovermode":"x unified"}});
+            Plotly.newPlot('weekly-pattern', {"data":[{"marker":{"color":"#3498db"},"name":"平均成交金额","showlegend":false,"text":["0.81万元","1.18万元","1.21万元","1.22万元","1.48万元","1.63万元","1.43万元"],"textposition":"outside","x":["一","二","三","四","五","六","日"],"y":[0.808833,1.176682,1.214828,1.215193,1.47731,1.629076,1.428657],"type":"bar","xaxis":"x","yaxis":"y"},{"marker":{"color":"#3498db"},"name":"总客单价","offsetgroup":"1","showlegend":false,"text":["¥149.23","¥149.42","¥156.75","¥152.85","¥158.42","¥151.40","¥153.29"],"textposition":"outside","x":["一","二","三","四","五","六","日"],"y":[149.23,149.42,156.75,152.85,158.42,151.4,153.29],"type":"bar","xaxis":"x2","yaxis":"y2"},{"marker":{"color":"#27ae60"},"name":"好友客单价","offsetgroup":"2","showlegend":false,"text":["¥134.69","¥129.41","¥139.44","¥132.29","¥138.20","¥131.07","¥141.00"],"textposition":"outside","x":["一","二","三","四","五","六","日"],"y":[134.69,129.41,139.44,132.29,138.2,131.07,141.0],"type":"bar","xaxis":"x2","yaxis":"y2"},{"marker":{"color":"#ffb74d"},"name":"社群客单价","offsetgroup":"3","showlegend":false,"text":["¥143.87","¥112.97","¥120.73","¥118.71","¥139.86","¥122.77","¥130.44"],"textposition":"outside","x":["一","二","三","四","五","六","日"],"y":[143.87,112.97,120.73,118.71,139.86,122.77,130.44],"type":"bar","xaxis":"x2","yaxis":"y2"},{"marker":{"color":"#27ae60"},"name":"好友成交占比","offsetgroup":"1","showlegend":false,"text":["10.0%","12.4%","12.3%","12.2%","12.2%","12.1%","14.4%"],"textposition":"outside","x":["一","二","三","四","五","六","日"],"y":[9.99,12.37,12.34,12.25,12.16,12.07,14.41],"type":"bar","xaxis":"x3","yaxis":"y3"},{"marker":{"color":"#ffb74d"},"name":"社群成交占比","offsetgroup":"2","showlegend":false,"text":["4.3%","4.6%","2.2%","2.7%","5.2%","3.8%","5.1%"],"textposition":"outside","x":["一","二","三","四","五","六","日"],"y":[4.27,4.56,2.24,2.69,5.21,3.77,5.11],"type":"bar","xaxis":"x3","yaxis":"y3"},{"marker":{"color":"#27ae60"},"name":"新增好友数","offsetgroup":"3","showlegend":false,"text":["14","8","18","12","23","41","35"],"textposition":"outside","x":["一","二","三","四","五","六","日"],"y":[14.6,8.2,18.0,12.8,23.5,41.6,35.4],"type":"bar","xaxis":"x4","yaxis":"y4"},{"marker":{"color":"#ffb74d"},"name":"新增群成员数","offsetgroup":"4","showlegend":false,"text":["15","11","20","14","28","44","42"],"textposition":"outside","x":["一","二","三","四","五","六","日"],"y":[15.2,11.0,20.8,14.5,28.2,44.6,42.0],"type":"bar","xaxis":"x4","yaxis":"y4"}],"layout":{"xaxis":{"anchor":"y","domain":[0.0,0.45],"title":{"text":"星期"}},"yaxis":{"anchor":"x","domain":[0.625,1.0],"title":{"text":"金额 (万元)"},"range":[0,1.9548911999999998]},"xaxis2":{"anchor":"y2","domain":[0.55,1.0],"title":{"text":"星期"}},"yaxis2":{"anchor":"x2","domain":[0.625,1.0],"title":{"text":"金额 (元)"},"range":[0,190.10399999999998]},"xaxis3":{"anchor":"y3","domain":[0.0,0.45],"title":{"text":"星期"}},"yaxis3":{"anchor":"x3","domain":[0.0,0.375],"title":{"text":"占比 (%)"},"range":[0,17.291999999999998]},"xaxis4":{"anchor":"y4","domain":[0.55,1.0],"title":{"text":"星期"}},"yaxis4":{"anchor":"x4","domain":[0.0,0.375],"title":{"text":"人数"},"range":[0,53.52]},"annotations":[{"font":{"size":16},"showarrow":false,"text":"平均成交金额","x":0.225,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"客单价对比","x":0.775,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"私域成交占比对比","x":0.225,"xanchor":"center","xref":"paper","y":0.375,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"平均新增用户对比","x":0.775,"xanchor":"center","xref":"paper","y":0.375,"yanchor":"bottom","yref":"paper"}],"title":{"font":{"size":20,"color":"#2c3e50"},"text":"星期模式分析","x":0.5},"margin":{"t":100,"b":80,"l":80,"r":80},"height":1000,"showlegend":true}});
+            Plotly.newPlot('marketing-pie', {"data":[{"hole":0.4,"hovertemplate":"%{label}<br>%{percent}<br>%{value:.2f}元<extra></extra>","labels":["社群+好友重合","仅好友","仅社群"],"marker":{"colors":["#9b59b6","#3498db","#e74c3c"]},"name":"私域营销","textinfo":"label+percent+value","texttemplate":"%{label}<br>%{percent}<br>%{value:.2f}元","values":[15746.22,33376.47,317.64],"type":"pie","domain":{"x":[0.0,0.45],"y":[0.0,1.0]}},{"hole":0.4,"hovertemplate":"%{label}<br>%{percent}<br>%{value:.2f}元<extra></extra>","labels":["朋友圈营销","互动活动营销","客户群发营销","社群群发营销"],"marker":{"colors":["#2ecc71","#f39c12","#9b59b6","#e67e22"]},"name":"其他营销","textinfo":"label+percent+value","texttemplate":"%{label}<br>%{percent}<br>%{value:.2f}元","values":[3424.14,0.0,1673.33,0.0],"type":"pie","domain":{"x":[0.55,1.0],"y":[0.0,1.0]}}],"layout":{"annotations":[{"font":{"size":16},"showarrow":false,"text":"私域成交金额分布","x":0.225,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"},{"font":{"size":16},"showarrow":false,"text":"直接触达成交金额分布","x":0.775,"xanchor":"center","xref":"paper","y":1.0,"yanchor":"bottom","yref":"paper"}],"title":{"font":{"size":20,"color":"#2c3e50"},"text":"营销渠道成交金额分布","x":0.5},"height":500,"showlegend":false}});
+        </script>
+    </body>
+    </html>
+    
