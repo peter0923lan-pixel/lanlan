@@ -1,5 +1,12 @@
 {
-  "rewrites": [
-    { "source": "/", "destination": "/乌苏烧烤营业额分析报表.html" }
-  ]
+    "rewrites": [
+        {
+            "source": "/",
+            "destination": "/乌苏烧烤营业额分析报表.html"
+        },
+        {
+            "source": "/大盘鸡",
+            "destination": "/金柱大盘鸡营业额分析报表.html"
+        }
+    ]
 }
