@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/乌苏烧烤营业额分析报表.html" }
+  ]
+}
