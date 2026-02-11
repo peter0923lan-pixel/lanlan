@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>谭十三经营分析报表</title>
+    <script src="https://cdn.plot.ly/plotly-3.3.1.min.js"></script>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.8;
+        }
+        
+        .chart-container {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+        
+        .chart-title {
+            font-size: 1.5em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(72, 1fr);
+            gap: 14px;
+            margin: 34px 0;
+        }
+        
+        .stat-card {
+            color: white;
+            padding: 16px 10px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stat-card:hover::before {
+            left: 100%;
+        }
+        
+        /* 第一行 - 基础指标 (深蓝色系) - 8个均匀分布，每个占9列 */
+        .stat-card:nth-child(1) {
+            grid-column: 1 / span 9;
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+        }
+        .stat-card:nth-child(2) {
+            grid-column: 10 / span 9;
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+        }
+        .stat-card:nth-child(3) {
+            grid-column: 19 / span 9;
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+        }
+        .stat-card:nth-child(4) {
+            grid-column: 28 / span 9;
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+        }
+        .stat-card:nth-child(5) {
+            grid-column: 37 / span 9;
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+        }
+        .stat-card:nth-child(6) {
+            grid-column: 46 / span 9;
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+        }
+        .stat-card:nth-child(7) {
+            grid-column: 55 / span 9;
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+        }
+        .stat-card:nth-child(8) {
+            grid-column: 64 / span 9;
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+        }
+        
+        /* 第二行 - 私域指标 (统一绿色系) - 9个均匀分布，每个占8列 */
+        .stat-card:nth-child(10) {
+            grid-column: 1 / span 8;
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+        .stat-card:nth-child(11) {
+            grid-column: 9 / span 8;
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+        .stat-card:nth-child(12) {
+            grid-column: 17 / span 8;
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+        .stat-card:nth-child(13) {
+            grid-column: 25 / span 8;
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+        .stat-card:nth-child(14) {
+            grid-column: 33 / span 8;
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+        .stat-card:nth-child(15) {
+            grid-column: 41 / span 8;
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+        .stat-card:nth-child(16) {
+            grid-column: 49 / span 8;
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+        .stat-card:nth-child(17) {
+            grid-column: 57 / span 8;
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+        .stat-card:nth-child(18) {
+            grid-column: 65 / span 8;
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+        
+        /* 第三行 - 非私域会员指标 (低饱和橘红色) - 6个，大小与私域会员指标一致(8列)，左对齐 */
+        .stat-card:nth-child(20) {
+            grid-column: 1 / span 8;
+            background: linear-gradient(135deg, #d98970 0%, #c97a64 100%);
+        }
+        .stat-card:nth-child(21) {
+            grid-column: 9 / span 8;
+            background: linear-gradient(135deg, #d98970 0%, #c97a64 100%);
+        }
+        .stat-card:nth-child(22) {
+            grid-column: 17 / span 8;
+            background: linear-gradient(135deg, #d98970 0%, #c97a64 100%);
+        }
+        .stat-card:nth-child(23) {
+            grid-column: 25 / span 8;
+            background: linear-gradient(135deg, #d98970 0%, #c97a64 100%);
+        }
+        .stat-card:nth-child(24) {
+            grid-column: 33 / span 8;
+            background: linear-gradient(135deg, #d98970 0%, #c97a64 100%);
+        }
+        .stat-card:nth-child(25) {
+            grid-column: 41 / span 8;
+            background: linear-gradient(135deg, #d98970 0%, #c97a64 100%);
+        }
+
+        /* 第四行 - 非会员指标 (低饱和紫色) - 6个，大小与私域会员指标一致(8列)，左对齐 */
+        .stat-card:nth-child(27) {
+            grid-column: 1 / span 8;
+            background: linear-gradient(135deg, #8e7cc3 0%, #7b6fae 100%);
+        }
+        .stat-card:nth-child(28) {
+            grid-column: 9 / span 8;
+            background: linear-gradient(135deg, #8e7cc3 0%, #7b6fae 100%);
+        }
+        .stat-card:nth-child(29) {
+            grid-column: 17 / span 8;
+            background: linear-gradient(135deg, #8e7cc3 0%, #7b6fae 100%);
+        }
+        .stat-card:nth-child(30) {
+            grid-column: 25 / span 8;
+            background: linear-gradient(135deg, #8e7cc3 0%, #7b6fae 100%);
+        }
+        .stat-card:nth-child(31) {
+            grid-column: 33 / span 8;
+            background: linear-gradient(135deg, #8e7cc3 0%, #7b6fae 100%);
+        }
+        .stat-card:nth-child(32) {
+            grid-column: 41 / span 8;
+            background: linear-gradient(135deg, #8e7cc3 0%, #7b6fae 100%);
+        }
+
+        /* 第五行 - 复购指标 (浅橙色调) - 6个均匀分布，每个占12列 */
+        .stat-card:nth-child(34) {
+            grid-column: 1 / span 12;
+            background: linear-gradient(135deg, #ffb74d 0%, #ff9800 100%);
+        }
+        .stat-card:nth-child(35) {
+            grid-column: 13 / span 12;
+            background: linear-gradient(135deg, #ffb74d 0%, #ff9800 100%);
+        }
+        .stat-card:nth-child(36) {
+            grid-column: 25 / span 12;
+            background: linear-gradient(135deg, #ffb74d 0%, #ff9800 100%);
+        }
+        .stat-card:nth-child(37) {
+            grid-column: 37 / span 12;
+            background: linear-gradient(135deg, #ffb74d 0%, #ff9800 100%);
+        }
+        .stat-card:nth-child(38) {
+            grid-column: 49 / span 12;
+            background: linear-gradient(135deg, #ffb74d 0%, #ff9800 100%);
+        }
+        .stat-card:nth-child(39) {
+            grid-column: 61 / span 12;
+            background: linear-gradient(135deg, #ffb74d 0%, #ff9800 100%);
+        }
+        
+        .stat-value {
+            font-size: 1.55em;
+            font-weight: 700;
+            margin-bottom: 6px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            letter-spacing: -0.5px;
+        }
+        
+        .stat-label {
+            font-size: 0.78em;
+            opacity: 0.95;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .insights {
+            background: #e8f5e8;
+            border-left: 5px solid #27ae60;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 5px;
+        }
+        
+        .insights h3 {
+            color: #27ae60;
+            margin-top: 0;
+        }
+        
+        .insights ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .insights li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            border-top: 1px solid #ecf0f1;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>谭十三营业数据分析报表</h1>
+            <p>数据分析期间: 2025年10月01日 - 2026年01月31日</p>
+            <p>报表生成时间: 2026年02月09日</p>
+        </div>
+        
+        <div class="section-title">
+            <h2 style="text-align: center; color: #2c3e50; margin: 40px 0 20px 0; font-size: 1.8em; font-weight: 600;">📊 核心业绩指标</h2>
+        </div>
+        
+        <div class="summary-stats">
+            <!-- 第一行：基础营业指标 -->
+            <div class="stat-card">
+                <div class="stat-value">497.58万元</div>
+                <div class="stat-label">总订单总额</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">439.21万元</div>
+                <div class="stat-label">总营业额</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">15023</div>
+                <div class="stat-label">总订单数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">¥292.36</div>
+                <div class="stat-label">客单价</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">88.27%</div>
+                <div class="stat-label">整体折扣率</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">35,709元</div>
+                <div class="stat-label">日均营业额</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">4</div>
+                <div class="stat-label">统计门店数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">8,927元</div>
+                <div class="stat-label">单店日均营业额</div>
+            </div>
+            
+            <!-- 分隔线和标题 -->
+            <div style="grid-column: 1 / -1; text-align: center; margin: 20px 0 10px 0;">
+                <h3 style="color: #56ab2f; font-size: 1.2em; font-weight: 600; margin: 0;">👥私域会员指标</h3>
+            </div>
+            
+            <!-- 第二行：私域相关指标 -->
+            <div class="stat-card">
+                <div class="stat-value">87.24万元</div>
+                <div class="stat-label">私域订单总额</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">72.31万元</div>
+                <div class="stat-label">私域订单收入</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">16.46%</div>
+                <div class="stat-label">私域成交占比</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2672</div>
+                <div class="stat-label">私域订单数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">￥270.61</div>
+                <div class="stat-label">私域客单价</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">82.88%</div>
+                <div class="stat-label">私域折扣率</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">10027</div>
+                <div class="stat-label">期间加入私域人数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">1919</div>
+                <div class="stat-label">私域去重消费人数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">19.14%</div>
+                <div class="stat-label">私域转化率</div>
+            </div>
+            
+            <!-- 分隔线和标题 -->
+            <div style="grid-column: 1 / -1; text-align: center; margin: 20px 0 10px 0;">
+                <h3 style="color: #d98970; font-size: 1.2em; font-weight: 600; margin: 0;">👥非私域会员指标</h3>
+            </div>
+            
+            <!-- 第三行：非私域会员相关指标 -->
+            <div class="stat-card">
+                <div class="stat-value">410.34万元</div>
+                <div class="stat-label">非私域会员订单总额</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">366.91万元</div>
+                <div class="stat-label">非私域会员订单收入</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">83.54%</div>
+                <div class="stat-label">非私域会员成交占比</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">12351</div>
+                <div class="stat-label">非私域会员订单数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">￥297.07</div>
+                <div class="stat-label">非私域会员客单价</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">89.42%</div>
+                <div class="stat-label">非私域会员折扣率</div>
+            </div>
+
+
+
+            <!-- 分隔线和标题 -->
+            <div style="grid-column: 1 / -1; text-align: center; margin: 20px 0 10px 0;">
+                <h3 style="color: #7b6fae; font-size: 1.2em; font-weight: 600; margin: 0;">复购指标</h3>
+            </div>
+            
+            <!-- 第三行：复购相关指标 -->
+            <div class="stat-card">
+                <div class="stat-value">14.47%</div>
+                <div class="stat-label">总复购率</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">18.66%</div>
+                <div class="stat-label">私域复购率</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">29天</div>
+                <div class="stat-label">总平均复购周期</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">21天</div>
+                <div class="stat-label">私域平均复购周期</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2.09次</div>
+                <div class="stat-label">总平均复购次数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2.79次</div>
+                <div class="stat-label">私域平均复购次数</div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <div id="monthly-trend"></div>
+        </div>
+        
+        <div class="chart-container">
+            <div id="weekly-average-chart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <div id="private-domain-chart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <div id="october-chart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <div id="november-chart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <div id="december-chart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <div id="january-chart"></div>
+        </div>
+        
+        <div class="chart-container">
+            <div id="marketing-pie"></div>
+            <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                <div style="flex: 0 0 100%; padding: 15px; text-align: center;">
+                    <p style="margin: 5px 0; font-size: 1.1em; color: #2c3e50; white-space: nowrap;">
+                        私域总成交金额 <span style="color: #8e44ad; font-weight: bold;">72.31万元</span> | 好友成交金额 <span style="color: #3498db; font-weight: bold;">65.91万元</span> | 社群成交金额 <span style="color: #e74c3c; font-weight: bold;">28.22万元</span></p>
+                </div>
+
+            </div>
+        </div>
+        
+        <div class="footer">
+        </div>
+    </div>
+    
+    <script>
+        const data = {"labels": ["10-01（三）", "10-02（四）", "10-03（五）", "10-04（六）", "10-05（日）", "10-06（一）", "10-07（二）", "10-08（三）", "10-09（四）", "10-10（五）", "10-11（六）", "10-12（日）", "10-13（一）", "10-14（二）", "10-15（三）", "10-16（四）", "10-17（五）", "10-18（六）", "10-19（日）", "10-20（一）", "10-21（二）", "10-22（三）", "10-23（四）", "10-24（五）", "10-25（六）", "10-26（日）", "10-27（一）", "10-28（二）", "10-29（三）", "10-30（四）", "10-31（五）", "11-01（六）", "11-02（日）", "11-03（一）", "11-04（二）", "11-05（三）", "11-06（四）", "11-07（五）", "11-08（六）", "11-09（日）", "11-10（一）", "11-11（二）", "11-12（三）", "11-13（四）", "11-14（五）", "11-15（六）", "11-16（日）", "11-17（一）", "11-18（二）", "11-19（三）", "11-20（四）", "11-21（五）", "11-22（六）", "11-23（日）", "11-24（一）", "11-25（二）", "11-26（三）", "11-27（四）", "11-28（五）", "11-29（六）", "11-30（日）", "12-01（一）", "12-02（二）", "12-03（三）", "12-04（四）", "12-05（五）", "12-06（六）", "12-07（日）", "12-08（一）", "12-09（二）", "12-10（三）", "12-11（四）", "12-12（五）", "12-13（六）", "12-14（日）", "12-15（一）", "12-16（二）", "12-17（三）", "12-18（四）", "12-19（五）", "12-20（六）", "12-21（日）", "12-22（一）", "12-23（二）", "12-24（三）", "12-25（四）", "12-26（五）", "12-27（六）", "12-28（日）", "12-29（一）", "12-30（二）", "12-31（三）", "01-01（四）", "01-02（五）", "01-03（六）", "01-04（日）", "01-05（一）", "01-06（二）", "01-07（三）", "01-08（四）", "01-09（五）", "01-10（六）", "01-11（日）", "01-12（一）", "01-13（二）", "01-14（三）", "01-15（四）", "01-16（五）", "01-17（六）", "01-18（日）", "01-19（一）", "01-20（二）", "01-21（三）", "01-22（四）", "01-23（五）", "01-24（六）", "01-25（日）", "01-26（一）", "01-27（二）", "01-28（三）", "01-29（四）", "01-30（五）", "01-31（六）"], "x": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122], "total_y": [5.537701, 7.49, 7.465904, 7.962586, 7.441176, 5.733403, 7.296446, 4.666007, 3.217766, 2.511397, 3.499104, 3.914401, 2.23378, 2.6802, 2.934748, 3.23252, 3.95217, 4.441176, 3.167938, 1.545467, 2.262368, 3.50647, 2.805006, 4.74843, 3.267449, 2.873152, 1.430477, 1.612099, 2.161933, 2.797142, 2.745064, 3.40, 2.98, 2.28, 1.64, 1.53, 2.93, 3.52, 5.22, 2.41, 1.90, 2.25, 2.08, 2.81, 3.33, 3.36, 3.39, 2.04, 2.00, 2.05, 2.63, 4.06, 5.59, 3.80, 3.40, 2.62, 4.38, 4.10, 6.65, 10.06, 3.77, 1.54, 2.72, 2.63, 3.27, 3.55, 6.30, 4.47, 2.59, 2.48, 3.48, 4.30, 4.38, 5.87, 4.83, 2.75, 2.56, 3.09, 2.41, 4.36, 4.42, 3.92, 2.45, 1.87, 2.92, 4.06, 3.88, 4.95, 3.38, 2.83, 3.02, 8.53, 7.91, 6.21, 2.81, 2.06, 1.59, 2.63, 2.68, 3.27, 4.18, 5.32, 3.06, 3.55, 2.70, 3.19, 2.43, 3.75, 3.84, 3.28, 1.34, 2.41, 1.85, 2.17, 3.30, 3.93, 2.82, 1.81, 2.41, 3.06, 3.22, 3.81, 5.54], "private_y": [0.675243, 1.318323, 0.71195, 0.965348, 0.825932, 0.5866, 0.627539, 0.385026, 0.2134, 0.504733, 0.47138, 0.446686, 0.0536, 0.093933, 0.3303, 0.20851, 0.374394, 0.502571, 0.4171, 0.042767, 0.36336, 0.5507, 0.2983, 0.40148, 0.163784, 0.2981, 0.163449, 0.127282, 0, 0.274573, 0.282246, 0.61, 0.53, 0.30, 0.19, 0.10, 0.83, 0.28, 0.65, 0.31, 0.26, 0.40, 0.24, 0.60, 1.04, 0.80, 0.72, 0.24, 0.25, 0.33, 0.56, 0.90, 1.08, 0.86, 0.48, 0.59, 1.66, 1.31, 2.22, 3.22, 0.71, 0.14, 0.36, 0.71, 0.38, 0.65, 1.56, 0.76, 0.79, 0.70, 0.82, 0.92, 0.68, 1.26, 0.72, 0.53, 0.75, 0.90, 0.54, 0.67, 0.58, 0.49, 0.49, 0.42, 1.34, 1.80, 1.29, 0.96, 0.69, 0.79, 0.39, 1.03, 1.77, 1.57, 0.55, 0.16, 0.11, 0.14, 0.23, 0.49, 0.33, 0.32, 0.40, 0.31, 0.22, 0.28, 0.31, 0.45, 0.56, 0.35, 0.17, 0.08, 0.12, 0.21, 0.48, 0.46, 0.24, 0.04, 0.40, 0.71, 0.28, 0.66, 0.86], "monthly": {"x": ["10月", "11月", "12月", "1月"], "total": [121.131203, 102.17928, 113.803194, 102.100877], "friend": [12.420592, 21.270321, 20.997528, 11.222617], "community": [1.208637, 8.13125, 11.852303, 7.029201]}, "pie_private": [21.83, 44.08, 6.40], "pie_marketing": [15, 10, 8, 5]};
+
+        // 辅助函数：生成月度图表
+        function createMonthlyChart(elementId, startIndex, endIndex, monthName) {
+            const monthX = data.x.slice(startIndex, endIndex).map((val, idx) => idx);
+            const monthLabels = data.labels.slice(startIndex, endIndex);
+            const monthTotalY = data.total_y.slice(startIndex, endIndex);
+            const monthPrivateY = data.private_y.slice(startIndex, endIndex);
+
+            Plotly.newPlot(elementId, {
+                data: [
+                    {
+                        name: '总营业额',
+                        x: monthX,
+                        y: monthTotalY,
+                        text: monthLabels,
+                        mode: 'lines+markers',
+                        line: { color: '#1f77b4', width: 3 },
+                        marker: { size: 6 },
+                        hovertemplate: '日期: %{text}<br>总营业额: %{y:.2f}万元<extra></extra>'
+                    },
+                    {
+                        name: '私域营业额',
+                        x: monthX,
+                        y: monthPrivateY,
+                        text: monthLabels,
+                        mode: 'lines+markers',
+                        line: { color: '#ff7f0e', width: 2 },
+                        marker: { size: 5 },
+                        hovertemplate: '日期: %{text}<br>私域营业额: %{y:.2f}万元<extra></extra>'
+                    }
+                ],
+                layout: {
+                    title: { text: `营业额按日分析（${monthName}）`, x: 0.5, font: { size: 24, color: '#2c3e50' } },
+                    xaxis: {
+                        title: { text: '日期' },
+                        tickmode: 'array',
+                        tickvals: monthX,
+                        ticktext: monthLabels,
+                        tickangle: 45,
+                        showline: true,
+                        linecolor: '#000000',
+                        linewidth: 1,
+                        zeroline: false,
+                        gridcolor: '#ecf0f1',
+                        gridwidth: 1
+                    },
+                    yaxis: {
+                        title: { text: '金额 (万元)' },
+                        showline: true,
+                        linecolor: '#000000',
+                        linewidth: 1,
+                        zeroline: false,
+                        gridcolor: '#ecf0f1',
+                        gridwidth: 1
+                    },
+                    legend: {
+                        x: 0.5,
+                        y: 1.1,
+                        xanchor: 'center',
+                        orientation: 'h'
+                    },
+                    margin: { b: 100 },
+                    height: 500,
+                    hovermode: 'x unified'
+                }
+            });
+        }
+
+                                // 10月区间（0-30）
+        createMonthlyChart('private-domain-chart', 0, 31, '10月');
+
+        // 11月区间（31-60）
+        createMonthlyChart('november-chart', 31, 61, '11月');
+
+        // 12月区间（61-91）
+        createMonthlyChart('december-chart', 61, 92, '12月');
+
+        // 1月区间（92-122）
+        createMonthlyChart('january-chart', 92, 123, '1月');
+
+        // 月度趋势 - 交易趋势与拉新趋势
+        const monthlyNewFriend = [0, 632, 1557, 1714];
+        const monthlyNewCommunity = [0, 568, 737, 553];
+        
+        Plotly.newPlot('monthly-trend', {
+            data: [
+                {
+                    type: 'bar',
+                    name: '总营业额',
+                    x: data.monthly.x,
+                    y: data.monthly.total,
+                    marker: { color: '#3498db' },
+                    text: data.monthly.total.map(v => v.toFixed(2) + '万元'),
+                    textposition: 'outside',
+                    xaxis: 'x',
+                    yaxis: 'y',
+                    showlegend: false,
+                    hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                },
+                {
+                    type: 'bar',
+                    name: '好友营业额',
+                    x: data.monthly.x,
+                    y: data.monthly.friend,
+                    marker: { color: '#27ae60' },
+                    text: data.monthly.friend.map(v => v.toFixed(2) + '万元'),
+                    textposition: 'outside',
+                    xaxis: 'x',
+                    yaxis: 'y',
+                    showlegend: false,
+                    hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                },
+                {
+                    type: 'bar',
+                    name: '社群营业额',
+                    x: data.monthly.x,
+                    y: data.monthly.community,
+                    marker: { color: '#ffb74d' },
+                    text: data.monthly.community.map(v => v.toFixed(2) + '万元'),
+                    textposition: 'outside',
+                    xaxis: 'x',
+                    yaxis: 'y',
+                    showlegend: false,
+                    hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                },
+                {
+                    type: 'bar',
+                    name: '新增留存好友',
+                    x: data.monthly.x,
+                    y: monthlyNewFriend,
+                    marker: { color: '#3498db' },
+                    text: monthlyNewFriend.map(v => v + '人'),
+                    textposition: 'outside',
+                    xaxis: 'x2',
+                    yaxis: 'y2',
+                    showlegend: false,
+                    hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                },
+                {
+                    type: 'bar',
+                    name: '新增留存群成员',
+                    x: data.monthly.x,
+                    y: monthlyNewCommunity,
+                    marker: { color: '#27ae60' },
+                    text: monthlyNewCommunity.map(v => v + '人'),
+                    textposition: 'outside',
+                    xaxis: 'x2',
+                    yaxis: 'y2',
+                    showlegend: false,
+                    hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                }
+            ],
+            layout: {
+                title: { text: '月度总计分析', x: 0.5, font: { size: 20, color: '#2c3e50' } },
+                xaxis: {
+                    anchor: 'y',
+                    domain: [0.0, 0.45],
+                    title: { text: '月份' }
+                },
+                yaxis: {
+                    anchor: 'x',
+                    domain: [0.0, 1.0],
+                    title: { text: '金额 (万元)' }
+                },
+                xaxis2: {
+                    anchor: 'y2',
+                    domain: [0.55, 1.0],
+                    title: { text: '月份' }
+                },
+                yaxis2: {
+                    anchor: 'x2',
+                    domain: [0.0, 1.0],
+                    title: { text: '数量 (人)' }
+                },
+                annotations: [
+                    {
+                        font: { size: 16 },
+                        showarrow: false,
+                        text: '交易趋势',
+                        x: 0.225,
+                        xanchor: 'center',
+                        xref: 'paper',
+                        y: 1.0,
+                        yanchor: 'bottom',
+                        yref: 'paper'
+                    },
+                    {
+                        font: { size: 16 },
+                        showarrow: false,
+                        text: '拉新趋势',
+                        x: 0.775,
+                        xanchor: 'center',
+                        xref: 'paper',
+                        y: 1.0,
+                        yanchor: 'bottom',
+                        yref: 'paper'
+                    }
+                ],
+                barmode: 'group',
+                height: 500,
+                showlegend: false
+            }
+        });
+
+        // 星期平均分析（自动生成）
+        const weekLabels = ["一", "二", "三", "四", "五", "六", "日"];
+        const avgTotalRevenue = [41.02, 45.14, 60.27, 65.03, 76.41, 89.77, 61.56];
+        const avgCommunityRevenue = [2.34, 2.22, 4.11, 4.32, 5.55, 6.45, 3.22];
+        const totalTicket = [283.69, 297.38, 282.56, 298.04, 296.53, 297.66, 286.19];
+        const friendTicket = [246.65, 302.63, 263.23, 302.79, 308.62, 279.35, 254.65];
+        const communityTicket = [223.31, 216.02, 209.85, 242.82, 276.05, 243.44, 207.52];
+
+        Plotly.newPlot('weekly-average-chart', {
+            data: [
+                {
+                    type: 'bar',
+                    name: '总营业额',
+                    x: weekLabels,
+                    y: avgTotalRevenue,
+                    marker: { color: '#3498db' },
+                    text: avgTotalRevenue.map(v => v.toFixed(2) + '万元'),
+                    textposition: 'outside',
+                    xaxis: 'x',
+                    yaxis: 'y',
+                    showlegend: false,
+                    hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                },
+                {
+                    type: 'bar',
+                    name: '社群营业额',
+                    x: weekLabels,
+                    y: avgCommunityRevenue,
+                    marker: { color: '#ffb74d' },
+                    text: avgCommunityRevenue.map(v => v.toFixed(2) + '万元'),
+                    textposition: 'outside',
+                    xaxis: 'x',
+                    yaxis: 'y',
+                    showlegend: false,
+                    hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                },
+                {
+                    type: 'bar',
+                    name: '总客单价',
+                    x: weekLabels,
+                    y: totalTicket,
+                    marker: { color: '#3498db' },
+                    text: totalTicket.map(v => '¥' + v.toFixed(2)),
+                    textposition: 'outside',
+                    xaxis: 'x2',
+                    yaxis: 'y2',
+                    showlegend: false,
+                    hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                },
+                {
+                    type: 'bar',
+                    name: '好友客单价',
+                    x: weekLabels,
+                    y: friendTicket,
+                    marker: { color: '#27ae60' },
+                    text: friendTicket.map(v => '¥' + v.toFixed(2)),
+                    textposition: 'outside',
+                    xaxis: 'x2',
+                    yaxis: 'y2',
+                    showlegend: false,
+                    hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                },
+                {
+                    type: 'bar',
+                    name: '社群客单价',
+                    x: weekLabels,
+                    y: communityTicket,
+                    marker: { color: '#ffb74d' },
+                    text: communityTicket.map(v => '¥' + v.toFixed(2)),
+                    textposition: 'outside',
+                    xaxis: 'x2',
+                    yaxis: 'y2',
+                    showlegend: false,
+                    hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                }
+            ],
+            layout: {
+                title: { text: '星期平均分析', x: 0.5, font: { size: 20, color: '#2c3e50' } },
+                xaxis: {
+                    anchor: 'y',
+                    domain: [0.0, 0.45],
+                    title: { text: '星期' }
+                },
+                yaxis: {
+                    anchor: 'x',
+                    domain: [0.0, 1.0],
+                    title: { text: '金额 (万元)' }
+                },
+                xaxis2: {
+                    anchor: 'y2',
+                    domain: [0.55, 1.0],
+                    title: { text: '星期' }
+                },
+                yaxis2: {
+                    anchor: 'x2',
+                    domain: [0.0, 1.0],
+                    title: { text: '金额 (元)' }
+                },
+                annotations: [
+                    {
+                        font: { size: 16 },
+                        showarrow: false,
+                        text: '平均营业额',
+                        x: 0.225,
+                        xanchor: 'center',
+                        xref: 'paper',
+                        y: 1.0,
+                        yanchor: 'bottom',
+                        yref: 'paper'
+                    },
+                    {
+                        font: { size: 16 },
+                        showarrow: false,
+                        text: '客单价对比',
+                        x: 0.775,
+                        xanchor: 'center',
+                        xref: 'paper',
+                        y: 1.0,
+                        yanchor: 'bottom',
+                        yref: 'paper'
+                    }
+                ],
+                barmode: 'group',
+                height: 500,
+                showlegend: false
+            }
+        });
+
+        // 营销渠道饼图
+        // 直接使用新的私域成交金额数据
+        const piePrivateWan = [21.83, 44.08, 6.40]; // 社群+好友重合, 仅好友, 仅社群
+        
+        Plotly.newPlot('marketing-pie', {
+            data: [
+                {
+                    type: 'pie',
+                    name: '私域营销',
+                    hole: 0.4,
+                    labels: ['社群+好友重合', '仅好友', '仅社群'],
+                    values: piePrivateWan,
+                    marker: { colors: ['#9b59b6', '#3498db', '#e74c3c'] },
+                    textinfo: 'label+percent+value',
+                    texttemplate: '%{label}<br>%{percent}<br>%{value:.2f}万元',
+                    hovertemplate: '%{label}<br>%{percent}<br>%{value:.2f}万元<extra></extra>',
+                    domain: { x: [0.0, 1.0], y: [0.0, 1.0] }
+                }
+            ],
+            layout: {
+                annotations: [
+                    { text: '私域成交金额分布', x: 0.5, xanchor: 'center', xref: 'paper', y: 1.15, yanchor: 'bottom', yref: 'paper', showarrow: false, font: { size: 20 } }
+                ],
+                height: 500,
+                showlegend: false
+            }
+        });
+    </script>
+</body>
+</html>
