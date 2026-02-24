@@ -65,6 +65,50 @@
                 font-weight: 500;
             }
             
+            .chart-title-small {
+                font-size: 1.2em;
+                color: #2c3e50;
+                margin-bottom: 15px;
+                text-align: center;
+                font-weight: 500;
+            }
+            
+            .charts-row {
+                display: flex;
+                gap: 20px;
+            }
+            
+            .charts-row .chart-container {
+                flex: 1;
+            }
+            
+            .insights-box {
+                background: #e8f5e8;
+                border-left: 5px solid #27ae60;
+                padding: 20px;
+                margin: 30px 0;
+                border-radius: 5px;
+            }
+            
+            .insights-box h3 {
+                color: #27ae60;
+                margin-top: 0;
+                font-size: 1.3em;
+                margin-bottom: 15px;
+            }
+            
+            .insights-box ul {
+                margin: 10px 0;
+                padding-left: 20px;
+            }
+            
+            .insights-box li {
+                margin: 12px 0;
+                line-height: 1.8;
+                color: #2c3e50;
+                font-size: 1.05em;
+            }
+            
             .summary-stats {
                 display: grid;
                 grid-template-columns: repeat(72, 1fr);
@@ -485,13 +529,69 @@
                 </div>
             </div>
             
+            <div class="section-title">
+                <h2 style="text-align: center; color: #2c3e50; margin: 40px 0 20px 0; font-size: 20px; font-weight: 600;">📊 优惠拆解</h2>
+            </div>
+            
+            <div class="charts-row">
+                <div class="chart-container">
+                    <div id="discount-analysis-chart"></div>
+                </div>
+                
+                <div class="chart-container">
+                    <div id="total-discount-analysis-chart"></div>
+                </div>
+            </div>
+            
+            <div class="insights-box">
+                <h3>📊 优惠数据说明</h3>
+                <ul>
+                    <li>会员订单中，73.59%的会员订单含团购（抖音/美团/大众点评团购其一或多个），2.4%的会员订单含抵用券；</li>
+                    <li>总体订单中，74.87%的订单含团购（抖音/美团/大众点评团购其一或多个），2.28%的订单含抵用券</li>
+                </ul>
+            </div>
+            
             <div class="chart-container">
                 <div id="monthly-trend"></div>
+            </div>
+            
+            <div class="charts-row">
+                <div class="chart-container">
+                    <div id="community-active-chart"></div>
+                </div>
+                
+                <div class="chart-container">
+                    <div id="community-revenue-chart"></div>
+                </div>
+            </div>
+            
+            <div class="insights-box">
+                <h3>📊 社群运营分析</h3>
+                <ul>
+                    <li>社群运营有所成效：社群活跃率和营业额占比的同步提升，证明了运营策略的有效性。</li>
+                    <li>外部触达能力增强：群外部联系人活跃率的稳步增长，体现了社群触达能力的强化和提高群成员参与的举措的有效性。</li>
+                    <li>新成员激活存在短板：新增群成员留存率的持续下滑，是当前运营中的主要短板，需要优化新用户引导和激励机制，提升新成员的参与感和归属感。</li>
+                    <li>社群营收占比稳步提高：社群在提升经营效益中扮演着越来越重要的角色。</li>
+                </ul>
             </div>
             
             <div class="chart-container">
                 <div id="weekly-average-chart"></div>
             </div>
+            
+            <div class="chart-title-small">活动数据分析</div>
+            
+            <div class="charts-row">
+                <div class="chart-container">
+                    <div id="activity-chart"></div>
+                </div>
+                
+                <div class="chart-container">
+                    <div id="community-activity-chart"></div>
+                </div>
+            </div>
+            
+
             
             <div class="chart-container">
                 <div id="private-domain-chart"></div>
@@ -731,6 +831,122 @@
                 }
             });
 
+            // 社群活跃率分析
+            const communityLabels = ["Nov 2025", "Dec 2025", "Jan 2026"];
+            const communityActiveRate = [32.79, 44.12, 87.27]; // 社群活跃率
+            const externalContactRate = [0.36, 1.08, 2.12]; // 群外部联系人活跃率
+            const newMemberRetentionRate = [68.87, 47.22, 36.48]; // 新增群成员留存率
+            
+            Plotly.newPlot('community-active-chart', {
+                data: [
+                    {
+                        type: 'bar',
+                        name: '社群活跃率',
+                        x: communityLabels,
+                        y: communityActiveRate,
+                        marker: { color: '#3498db' },
+                        text: communityActiveRate.map(v => v + '%'),
+                        textposition: 'outside',
+                        xaxis: 'x',
+                        yaxis: 'y',
+                        showlegend: false,
+                        hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                    },
+                    {
+                        type: 'bar',
+                        name: '群外部联系人活跃率',
+                        x: communityLabels,
+                        y: externalContactRate,
+                        marker: { color: '#27ae60' },
+                        text: externalContactRate.map(v => v + '%'),
+                        textposition: 'outside',
+                        xaxis: 'x',
+                        yaxis: 'y',
+                        showlegend: false,
+                        hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                    },
+                    {
+                        type: 'bar',
+                        name: '新增群成员留存率',
+                        x: communityLabels,
+                        y: newMemberRetentionRate,
+                        marker: { color: '#ffb74d' },
+                        text: newMemberRetentionRate.map(v => v + '%'),
+                        textposition: 'outside',
+                        xaxis: 'x',
+                        yaxis: 'y',
+                        showlegend: false,
+                        hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                    }
+                ],
+                layout: {
+                    title: { text: '社群活跃与留存', x: 0.5, font: { size: 16, color: '#2c3e50' } },
+                    xaxis: {
+                        anchor: 'y',
+                        domain: [0.0, 1.0],
+                        title: { text: '月份' }
+                    },
+                    yaxis: {
+                        anchor: 'x',
+                        domain: [0.0, 1.0],
+                        title: { text: '百分比 (%)' }
+                    },
+                    barmode: 'group',
+                    height: 500,
+                    showlegend: true,
+                    legend: {
+                        x: 0.5,
+                        y: 1.1,
+                        xanchor: 'center',
+                        orientation: 'h'
+                    }
+                }
+            });
+
+            // 社群营业额占比分析
+            const communityRevenueLabels = ["Oct 2025", "Nov 2025", "Dec 2025", "Jan 2026"];
+            const communityRevenueRate = [1.18, 1.40, 4.01, 7.02]; // 社群营业额占比
+            
+            Plotly.newPlot('community-revenue-chart', {
+                data: [
+                    {
+                        type: 'bar',
+                        name: '社群营业额占比',
+                        x: communityRevenueLabels,
+                        y: communityRevenueRate,
+                        marker: { color: '#9b59b6' },
+                        text: communityRevenueRate.map(v => v + '%'),
+                        textposition: 'outside',
+                        xaxis: 'x',
+                        yaxis: 'y',
+                        showlegend: false,
+                        hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                    }
+                ],
+                layout: {
+                    title: { text: '社群营业额占比趋势', x: 0.5, font: { size: 16, color: '#2c3e50' } },
+                    xaxis: {
+                        anchor: 'y',
+                        domain: [0.0, 1.0],
+                        title: { text: '月份' }
+                    },
+                    yaxis: {
+                        anchor: 'x',
+                        domain: [0.0, 1.0],
+                        title: { text: '百分比 (%)' }
+                    },
+                    barmode: 'group',
+                    height: 500,
+                    showlegend: true,
+                    legend: {
+                        x: 0.5,
+                        y: 1.1,
+                        xanchor: 'center',
+                        orientation: 'h'
+                    }
+                }
+            });
+
             // 星期平均分析（自动生成）
             const weekLabels = ["一", "二", "三", "四", "五", "六", "日"];
             const avgTotalRevenue = [28.102780529411767, 30.63798211764706, 39.65687116666667, 39.16747522222222, 48.84036622222222, 78.14975822222222, 68.85364517647058];
@@ -739,6 +955,9 @@
             const friendTicket = [276.425378238342, 277.3697694753577, 275.43099711815563, 299.73630994152046, 293.53637580299784, 292.15345674348316, 294.49667326732674];
             const communityTicket = [255.1101730103806, 252.36459037711313, 258.498782358581, 282.3817890772128, 278.0440222032451, 279.20658166363086, 274.8184779050736];
 
+            // 星期社群营业额占比数据
+            const weekCommunityRate = [3.10, 3.72, 3.78, 4.26, 3.71, 3.26, 2.88]; // 社群营业额占比
+            
             Plotly.newPlot('weekly-average-chart', {
                 data: [
                     {
@@ -764,6 +983,20 @@
                         textposition: 'outside',
                         xaxis: 'x',
                         yaxis: 'y',
+                        showlegend: false,
+                        hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                    },
+                    {
+                        type: 'scatter',
+                        name: '社群营业额占比',
+                        x: weekLabels,
+                        y: weekCommunityRate,
+                        marker: { color: '#e74c3c', size: 8 },
+                        line: { color: '#e74c3c', width: 2 },
+                        text: weekCommunityRate.map(v => v + '%'),
+                        textposition: 'top',
+                        xaxis: 'x',
+                        yaxis: 'y3',
                         showlegend: false,
                         hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
                     },
@@ -819,6 +1052,13 @@
                         domain: [0.0, 1.0],
                         title: { text: '金额 (万元)' }
                     },
+                    yaxis3: {
+                        anchor: 'x',
+                        domain: [0.0, 1.0],
+                        title: { text: '占比 (%)' },
+                        side: 'right',
+                        overlaying: 'y'
+                    },
                     xaxis2: {
                         anchor: 'y2',
                         domain: [0.55, 1.0],
@@ -853,6 +1093,233 @@
                             yref: 'paper'
                         }
                     ],
+                    barmode: 'group',
+                    height: 500,
+                    showlegend: true,
+                    legend: {
+                        x: 0.5,
+                        y: 1.1,
+                        xanchor: 'center',
+                        orientation: 'h'
+                    }
+                }
+            });
+
+            // 拉新活动数据分析
+            const activityLabels = ["拉新活动整体", "30元代金券", "饮品券"];
+            const couponRedeemRate = [10.51, 3.65, 17.35]; // 券核销率
+            const consumptionPull = [38.11, 7.12, 30.99]; // 拉动消费（万元）
+            const orderDiscountRate = [93.94, 88.42, 95.28]; // 所属订单平均折扣率
+            
+            Plotly.newPlot('activity-chart', {
+                data: [
+                    {
+                        type: 'bar',
+                        name: '券核销率',
+                        x: activityLabels,
+                        y: couponRedeemRate,
+                        marker: { color: '#3498db' },
+                        text: couponRedeemRate.map(v => v + '%'),
+                        textposition: 'outside',
+                        xaxis: 'x',
+                        yaxis: 'y',
+                        showlegend: false,
+                        hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                    },
+                    {
+                        type: 'bar',
+                        name: '拉动消费',
+                        x: activityLabels,
+                        y: consumptionPull,
+                        marker: { color: '#27ae60' },
+                        text: consumptionPull.map(v => v + '万元'),
+                        textposition: 'outside',
+                        xaxis: 'x',
+                        yaxis: 'y',
+                        showlegend: false,
+                        hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                    },
+                    {
+                        type: 'bar',
+                        name: '所属订单平均折扣率',
+                        x: activityLabels,
+                        y: orderDiscountRate,
+                        marker: { color: '#ffb74d' },
+                        text: orderDiscountRate.map(v => v + '%'),
+                        textposition: 'outside',
+                        xaxis: 'x',
+                        yaxis: 'y',
+                        showlegend: false,
+                        hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                    }
+                ],
+                layout: {
+                    title: { text: '拉新活动', x: 0.5, font: { size: 16, color: '#2c3e50' } },
+                    xaxis: {
+                        anchor: 'y',
+                        domain: [0.0, 1.0],
+                        title: { text: '活动类型' }
+                    },
+                    yaxis: {
+                        anchor: 'x',
+                        domain: [0.0, 1.0],
+                        title: { text: '数值' }
+                    },
+                    barmode: 'group',
+                    height: 500,
+                    showlegend: true,
+                    legend: {
+                        x: 0.5,
+                        y: 1.1,
+                        xanchor: 'center',
+                        orientation: 'h'
+                    }
+                }
+            });
+
+            // 社群活动数据分析
+            const communityActivityLabels = ["拉新活动整体"];
+            const communityCouponRedeemRate = [25.36]; // 券核销率
+            const communityConsumptionPull = [402.61]; // 拉动消费（万元）
+            const communityOrderDiscountRate = [88.8]; // 所属订单平均折扣率
+            
+            Plotly.newPlot('community-activity-chart', {
+                data: [
+                    {
+                        type: 'bar',
+                        name: '券核销率',
+                        x: communityActivityLabels,
+                        y: communityCouponRedeemRate,
+                        marker: { color: '#3498db' },
+                        text: communityCouponRedeemRate.map(v => v + '%'),
+                        textposition: 'outside',
+                        xaxis: 'x',
+                        yaxis: 'y',
+                        showlegend: false,
+                        hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                    },
+                    {
+                        type: 'bar',
+                        name: '拉动消费',
+                        x: communityActivityLabels,
+                        y: communityConsumptionPull,
+                        marker: { color: '#27ae60' },
+                        text: communityConsumptionPull.map(v => v + '万'),
+                        textposition: 'outside',
+                        xaxis: 'x',
+                        yaxis: 'y',
+                        showlegend: false,
+                        hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                    },
+                    {
+                        type: 'bar',
+                        name: '所属订单平均折扣率',
+                        x: communityActivityLabels,
+                        y: communityOrderDiscountRate,
+                        marker: { color: '#ffb74d' },
+                        text: communityOrderDiscountRate.map(v => v + '%'),
+                        textposition: 'outside',
+                        xaxis: 'x',
+                        yaxis: 'y',
+                        showlegend: false,
+                        hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                    }
+                ],
+                layout: {
+                    title: { text: '社群活动', x: 0.5, font: { size: 16, color: '#2c3e50' } },
+                    xaxis: {
+                        anchor: 'y',
+                        domain: [0.0, 1.0],
+                        title: { text: '活动类型' }
+                    },
+                    yaxis: {
+                        anchor: 'x',
+                        domain: [0.0, 1.0],
+                        title: { text: '数值' }
+                    },
+                    barmode: 'group',
+                    height: 500,
+                    showlegend: true,
+                    legend: {
+                        x: 0.5,
+                        y: 1.1,
+                        xanchor: 'center',
+                        orientation: 'h'
+                    }
+                }
+            });
+
+            // 优惠拆解分析
+            const discountLabels = ["会员订单数", "会员含团购订单数", "会员含抵用券订单数"];
+            const discountValues = [19.21, 14.14, 0.46]; // 单位：万
+            const discountPercentages = ["", "", ""];
+            
+            Plotly.newPlot('discount-analysis-chart', {
+                data: [
+                    {
+                        type: 'bar',
+                        name: '数量',
+                        x: discountLabels,
+                        y: discountValues,
+                        marker: { color: '#3498db' },
+                        text: discountValues.map((v, i) => v + '万' + discountPercentages[i]),
+                        textposition: 'outside',
+                        xaxis: 'x',
+                        yaxis: 'y',
+                        showlegend: false,
+                        hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                    }
+                ],
+                layout: {
+                    title: { text: '会员订单优惠拆解', x: 0.5, font: { size: 16, color: '#2c3e50' } },
+                    xaxis: {
+                        anchor: 'y',
+                        domain: [0.0, 1.0],
+                        title: { text: '订单类型' }
+                    },
+                    yaxis: {
+                        anchor: 'x',
+                        domain: [0.0, 1.0],
+                        title: { text: '数量 (万)' }
+                    },
+                    barmode: 'group',
+                    height: 500,
+                    showlegend: false
+                }
+            });
+
+            // 总订单优惠拆解分析
+            const totalDiscountLabels = ["总订单数", "含团购订单数", "含抵用券订单数"];
+            const totalDiscountValues = [23.79, 17.82, 0.54]; // 单位：万
+            
+            Plotly.newPlot('total-discount-analysis-chart', {
+                data: [
+                    {
+                        type: 'bar',
+                        name: '数量',
+                        x: totalDiscountLabels,
+                        y: totalDiscountValues,
+                        marker: { color: '#3498db' },
+                        text: totalDiscountValues.map(v => v + '万'),
+                        textposition: 'outside',
+                        xaxis: 'x',
+                        yaxis: 'y',
+                        showlegend: false,
+                        hovertemplate: '%{fullData.name}<br>%{text}<extra></extra>'
+                    }
+                ],
+                layout: {
+                    title: { text: '总订单优惠拆解', x: 0.5, font: { size: 16, color: '#2c3e50' } },
+                    xaxis: {
+                        anchor: 'y',
+                        domain: [0.0, 1.0],
+                        title: { text: '订单类型' }
+                    },
+                    yaxis: {
+                        anchor: 'x',
+                        domain: [0.0, 1.0],
+                        title: { text: '数量 (万)' }
+                    },
                     barmode: 'group',
                     height: 500,
                     showlegend: false
@@ -902,4 +1369,3 @@
         </script>
     </body>
     </html>
-    
